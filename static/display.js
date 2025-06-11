@@ -106,8 +106,8 @@ export function displayProfile(body, userData, totalXP, totalAudits) {
       <p>You created your account on: ${new Date(
         userData.createdAt
       ).toLocaleDateString()}</p>
-      <p>Total XP earned: <span style="color: var(--primary);">${totalXP}</span> kB</p>
-      <p>Number of audits: <span style="color: var(--primary);">${totalAudits}</span></p>
+      <p>Module XP earned: <span style="color: var(--primary);">${totalXP}</span> kB</p>
+      <p>Audits you have done: <span style="color: var(--primary);">${totalAudits}</span></p>
     </div>
     <div class="user-objects">
       <h2>Your activities</h2>

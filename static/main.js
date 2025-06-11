@@ -1,4 +1,9 @@
-import { displayLoginForm, displayProfile, displayXPStats, displayObjStats } from "./display.js";
+import {
+  displayLoginForm,
+  displayProfile,
+  displayXPStats,
+  displayObjStats,
+} from "./display.js";
 import { queryGraphQL } from "./graphql.js";
 import { showModal } from "./utilities.js";
 
@@ -13,27 +18,29 @@ const closeModal = document.getElementById("close-modal");
 const validPaths = [
   "/",
   "/index.html",
-  "/graphQL",           
-  "/graphQL/",          
-  "/graphQL/index.html" 
+  "/graphQL",
+  "/graphQL/",
+  "/graphQL/index.html",
 ];
 
 function getBasePath() {
   // Return the correct base path based on environment
-  if (window.location.hostname === 'ali-2003-creator.github.io') {
-    return '/graphQL/';
+  if (window.location.hostname === "ali-2003-creator.github.io") {
+    return "/graphQL/";
   }
-  return '/'; // For local development
+  return "/"; // For local development
 }
 
 function isValidRoute(pathname) {
   const normalizedPath = pathname.toLowerCase();
-  
-  return validPaths.some(route => {
+
+  return validPaths.some((route) => {
     const normalizedRoute = route.toLowerCase();
-    return normalizedPath === normalizedRoute || 
-           normalizedPath.endsWith(normalizedRoute) ||
-           (normalizedRoute === '/' && normalizedPath === '');
+    return (
+      normalizedPath === normalizedRoute ||
+      normalizedPath.endsWith(normalizedRoute) ||
+      (normalizedRoute === "/" && normalizedPath === "")
+    );
   });
 }
 
@@ -45,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("current path:", currentPath);
   console.log("current host:", window.location.hostname);
 
-  if(!isValidRoute(currentPath)) {
+  if (!isValidRoute(currentPath)) {
     showModal(modal, modalMessage, "404 Not Found", false);
     return;
   }
@@ -71,10 +78,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const result = await queryGraphQL(query);
     if (!result || !result.data.user) {
-      showModal(modal, modalMessage, "Profile not found. Please log in again.", false);
+      showModal(
+        modal,
+        modalMessage,
+        "Profile not found. Please log in again.",
+        false
+      );
       localStorage.removeItem("jwt");
       displayLoginForm(body);
-      return; 
+      return;
     }
 
     // Hide login form and display user data
@@ -85,20 +97,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const transactionQuery = `
       query {
-        transaction(where: {userId: {_eq: ${ID}}, type: {_eq: "xp"}}) {
+        transaction(where: {userId: {_eq: ${ID}}, type: {_eq: "xp"}, object: {type: {_in: [ "project", "exam"]}}}) {
           amount
           objectId
           createdAt
+          object {
+            name
+            type
+          }
         }
-        audit(where: { grade: { _is_null: false } }) {
+          audit(where: {grade: {_is_null: false}, auditorId: {_eq: ${ID}}}) {
           resultId
           grade
+          createdAt
+          auditorId
         }
       }
-    `
+    `;
     const transactionResult = await queryGraphQL(transactionQuery);
     if (!transactionResult || !transactionResult.data) {
-      showModal(modal, modalMessage, "Failed to fetch transactions or audits.", false);
+      showModal(
+        modal,
+        modalMessage,
+        "Failed to fetch transactions or audits.",
+        false
+      );
       return;
     }
 
@@ -108,7 +131,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       (sum, transaction) => sum + transaction.amount,
       0
     );
-    const xpInkB = (Math.round(totalXP / 1000) / 2); // to make the XP in kB
+    const xpInkB = Math.round(totalXP / 1000); // to make the XP in kB
     const totalAudits = transactionResult.data.audit.length;
 
     displayProfile(body, userData, xpInkB, totalAudits);
@@ -132,7 +155,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
         }
       }
-    `
+    `;
     const objectResult = await queryGraphQL(objectsQuery);
     if (!objectResult || !objectResult.data) {
       showModal(modal, modalMessage, "Failed to fetch objects.", false);
@@ -143,11 +166,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.querySelector(".object-stat"),
       objectResult.data.event_user
     );
-
   } catch (error) {
     console.error("Error validating JWT:", error);
     localStorage.removeItem("jwt");
-    displayLoginForm(body); 
+    displayLoginForm(body);
   }
 });
 
@@ -155,5 +177,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 closeModal.addEventListener("click", () => {
   modal.style.display = "none";
 });
-
-
